@@ -31,6 +31,7 @@ import org.tensorflow.lite.support.tensorbuffer.TensorBuffer
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 import kotlin.math.acos
+import kotlin.math.atan2
 import kotlin.math.pow
 import kotlin.math.sqrt
 
@@ -46,10 +47,10 @@ class CorrectorActivity : AppCompatActivity() {
     private lateinit var cameraManager: CameraManager
     private var cameraDevice: CameraDevice? = null
     private var captureSession: CameraCaptureSession? = null
-    private var badPostureStartTime: Long = 0
     private var isBadPosture: Boolean = false
     private lateinit var mediaPlayer: MediaPlayer
     private lateinit var executorService: ExecutorService
+    private var badPostureCount = 0
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -105,7 +106,7 @@ class CorrectorActivity : AppCompatActivity() {
                 // Draw key points and check posture
                 val keyPoints = mutableListOf<FloatArray>()
                 for (i in outputFeature0.indices step 3) {
-                    if (outputFeature0[i + 2] > 0.20) {
+                    if (outputFeature0[i + 2] > 0.25) {
                         val x = outputFeature0[i + 1] * w
                         val y = outputFeature0[i] * h
                         canvas.drawCircle(x, y, 10f, paint)
@@ -119,21 +120,16 @@ class CorrectorActivity : AppCompatActivity() {
                 drawSkeleton(canvas, keyPoints)
 
                 // Check posture
-                val posture = checkPosture(keyPoints)
+                val posture = checkPosture(keyPoints, canvas)
                 if (posture == "bad") {
-                    if (!isBadPosture) {
-                        isBadPosture = true
-                        badPostureStartTime = System.currentTimeMillis()
-                    } else {
-                        val currentTime = System.currentTimeMillis()
-                        if (currentTime - badPostureStartTime >= 3000) {
-                            if (!mediaPlayer.isPlaying) {
-                                executorService.submit { mediaPlayer.start() }
-                            }
+                    badPostureCount++
+                    if (badPostureCount >= 20) {
+                        if (!mediaPlayer.isPlaying) {
+                            executorService.submit { mediaPlayer.start() }
                         }
                     }
                 } else {
-                    isBadPosture = false
+                    badPostureCount = 0
                 }
 
                 imageView.setImageBitmap(mutable)
@@ -196,38 +192,55 @@ class CorrectorActivity : AppCompatActivity() {
         dialog.show()
     }
 
-    private fun checkPosture(keyPoints: List<FloatArray>): String {
-        // Example: Calculate the angle between shoulders and hip to determine upper body posture
-        // Assuming keyPoints[5] is left shoulder, keyPoints[6] is right shoulder, keyPoints[11] is left hip, keyPoints[12] is right hip
+    private fun checkPosture(keyPoints: List<FloatArray>, canvas: Canvas): String {
+        // Assuming keyPoints[1] is left ear, keyPoints[2] is right ear, keyPoints[5] is left shoulder, keyPoints[6] is right shoulder, keyPoints[11] is left hip, keyPoints[12] is right hip
 
+        val leftEar = keyPoints[1]
+        val rightEar = keyPoints[2]
         val leftShoulder = keyPoints[5]
         val rightShoulder = keyPoints[6]
         val leftHip = keyPoints[11]
         val rightHip = keyPoints[12]
 
         // Check if all required keypoints are detected
-        if (leftShoulder.any { it.isNaN() } || rightShoulder.any { it.isNaN() }) {
+        if (leftEar.any { it.isNaN() } || rightEar.any { it.isNaN() } || leftShoulder.any { it.isNaN() } || rightShoulder.any { it.isNaN() } || leftHip.any { it.isNaN() } || rightHip.any { it.isNaN() }) {
             return "good" // Not all keypoints are detected
         }
 
-        // Calculate the angle between shoulders and hip
-        val angleLeft = if (!leftHip.any { it.isNaN() }) calculateAngle(leftShoulder, rightShoulder, leftHip) else Float.NaN
-        val angleRight = if (!rightHip.any { it.isNaN() }) calculateAngle(leftShoulder, rightShoulder, rightHip) else Float.NaN
+        // Calculate neck and torso inclinations
+        val neckInclination = calculateInclination(leftEar, leftShoulder)
+        val torsoInclination = calculateInclination(leftShoulder, leftHip)
 
-        // Determine posture based on angles (adjust thresholds as needed)
-        return if ((!angleLeft.isNaN() && (angleLeft < 75 || angleLeft > 105)) ||
-            (!angleRight.isNaN() && (angleRight < 75 || angleRight > 105))) {
-            "bad"
-        } else {
-            "good"
-        }
+        // Display angles and draw lines
+        val font = android.graphics.Typeface.DEFAULT
+        val lightGreen = Color.GREEN
+        val green = Color.GREEN
+
+        val lEarX = leftEar[0].toInt()
+        val lEarY = leftEar[1].toInt()
+        val lShldrX = leftShoulder[0].toInt()
+        val lShldrY = leftShoulder[1].toInt()
+        val lHipX = leftHip[0].toInt()
+        val lHipY = leftHip[1].toInt()
+
+        val angleTextString = "Neck: %.2f, Torso: %.2f".format(neckInclination, torsoInclination)
+        canvas.drawText(angleTextString, 10f, 30f, paint)
+        canvas.drawText(neckInclination.toInt().toString(), lShldrX + 10f, lShldrY.toFloat(), paint)
+        canvas.drawText(torsoInclination.toInt().toString(), lHipX + 10f, lHipY.toFloat(), paint)
+
+        canvas.drawLine(lShldrX.toFloat(), lShldrY.toFloat(), lEarX.toFloat(), lEarY.toFloat(), paint)
+        canvas.drawLine(lShldrX.toFloat(), lShldrY.toFloat(), lShldrX.toFloat(), lShldrY - 100f, paint)
+        canvas.drawLine(lHipX.toFloat(), lHipY.toFloat(), lShldrX.toFloat(), lShldrY.toFloat(), paint)
+        canvas.drawLine(lHipX.toFloat(), lHipY.toFloat(), lHipX.toFloat(), lHipY - 100f, paint)
+
+        return if (neckInclination >= 75 && neckInclination <= 115 && torsoInclination <= 100 && torsoInclination >= 80) "good" else "bad"
     }
 
-    private fun calculateAngle(pointA: FloatArray, pointB: FloatArray, pointC: FloatArray): Float {
-        val ba = floatArrayOf(pointA[0] - pointB[0], pointA[1] - pointB[1])
-        val bc = floatArrayOf(pointC[0] - pointB[0], pointC[1] - pointB[1])
-        val cosineAngle = (ba[0] * bc[0] + ba[1] * bc[1]) / (sqrt(ba[0].pow(2) + ba[1].pow(2)) * sqrt(bc[0].pow(2) + bc[1].pow(2)))
-        return Math.toDegrees(acos(cosineAngle).toDouble()).toFloat()
+    private fun calculateInclination(pointA: FloatArray, pointB: FloatArray): Float {
+        val deltaX = pointA[0] - pointB[0]
+        val deltaY = pointA[1] - pointB[1]
+        var angle = Math.toDegrees(atan2(deltaY.toDouble(), deltaX.toDouble())).toFloat()
+        return if (angle < 0) -1 * angle else angle
     }
 
     private fun drawSkeleton(canvas: Canvas, keyPoints: List<FloatArray>) {
