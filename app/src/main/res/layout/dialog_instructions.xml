@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="16dp">
+
+    <TextView
+        android:id="@+id/instructionsText"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="This setup will help in identifying whether you are maintaining a good or bad sitting posture. Please follow these instructions before using the camera:"
+        android:textSize="18sp"
+        android:layout_marginBottom="16dp" />
+
+    <TextView
+        android:id="@+id/instructionsDetails"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="1. Position the camera at a distance where it can capture your entire body while you are seated.\n2. Ensure the camera is placed beside you, allowing it to monitor and detect your sitting posture from a side view.\n"
+        android:textSize="16sp" />
+
+    <ImageView
+        android:id="@+id/instructionsImage"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:src="@drawable/sitting"
+        android:layout_gravity="center"
+        android:layout_marginBottom="16dp" />
+
+</LinearLayout>
