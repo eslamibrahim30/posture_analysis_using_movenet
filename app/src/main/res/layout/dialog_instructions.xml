@@ -17,7 +17,7 @@
         android:id="@+id/instructionsDetails"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="1. Position the camera at a distance where it can capture your entire body while you are seated.\n2. Ensure the camera is placed beside you, allowing it to monitor and detect your sitting posture from a side view.\n"
+        android:text="1. Position the camera at a distance where it can capture your entire body while you are seated.\n\n2. Ensure the camera is placed beside you, allowing it to monitor and detect your sitting posture from a side view.\n"
         android:textSize="16sp" />
 
     <ImageView
