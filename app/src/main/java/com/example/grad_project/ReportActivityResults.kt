@@ -1,20 +1,39 @@
 package com.example.grad_project
 
+import android.graphics.Bitmap
 import android.os.Bundle
-import androidx.activity.enableEdgeToEdge
+import android.widget.ImageView
+import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.view.ViewCompat
-import androidx.core.view.WindowInsetsCompat
 
 class ReportActivityResults : AppCompatActivity() {
+
+    private lateinit var textViewReport: TextView
+    private lateinit var imageViewFrontView: ImageView
+    private lateinit var imageViewSideView: ImageView
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
         setContentView(R.layout.activity_report_results)
-        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main)) { v, insets ->
-            val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
-            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
-            insets
-        }
+
+        textViewReport = findViewById(R.id.textViewReport)
+        imageViewFrontView = findViewById(R.id.imageViewFrontView)
+        imageViewSideView = findViewById(R.id.imageViewSideView)
+
+        val patientName = intent.getStringExtra("patientName")
+        val patientAge = intent.getStringExtra("patientAge")
+        val patientGender = intent.getStringExtra("patientGender")
+        val frontViewBitmap = intent.getParcelableExtra<Bitmap>("frontViewBitmap")
+        val sideViewBitmap = intent.getParcelableExtra<Bitmap>("sideViewBitmap")
+
+        val reportText = """
+            Patient Name: $patientName
+            Patient Age: $patientAge
+            Patient Gender: $patientGender
+        """.trimIndent()
+
+        textViewReport.text = reportText
+        imageViewFrontView.setImageBitmap(frontViewBitmap)
+        imageViewSideView.setImageBitmap(sideViewBitmap)
     }
 }

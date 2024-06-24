@@ -1,11 +1,30 @@
-<?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout
-    xmlns:android="http://schemas.android.com/apk/res/android"
+<!-- activity_report_results.xml -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
-    android:id="@+id/main"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="16dp"
     tools:context=".ReportActivityResults">
 
-  </androidx.constraintlayout.widget.ConstraintLayout>
+  <TextView
+      android:id="@+id/textViewReport"
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      android:text="Report"
+      android:textSize="18sp"
+      android:textStyle="bold" />
+
+  <ImageView
+      android:id="@+id/imageViewFrontView"
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      android:contentDescription="Front View Image" />
+
+  <ImageView
+      android:id="@+id/imageViewSideView"
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      android:contentDescription="Side View Image" />
+
+</LinearLayout>
