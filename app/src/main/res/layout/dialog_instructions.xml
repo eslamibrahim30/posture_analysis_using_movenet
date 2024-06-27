@@ -9,7 +9,7 @@
         android:id="@+id/instructionsText"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="This setup will help in identifying whether you are maintaining a good or bad sitting posture. Please follow these instructions before using the camera:"
+        android:text="This setup will help in identifying whether you are maintaining a good or bad sitting posture.\n\nPlease follow these instructions before using the camera:"
         android:textSize="18sp"
         android:layout_marginBottom="16dp" />
 
