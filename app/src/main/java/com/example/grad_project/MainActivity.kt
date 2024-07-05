@@ -106,14 +106,10 @@ class MainActivity : AppCompatActivity() {
                 // Draw key points and check posture
                 val keyPoints = mutableListOf<FloatArray>()
                 for (i in outputFeature0.indices step 3) {
-                    if (outputFeature0[i + 2] > 0.2) {
-                        val x = outputFeature0[i + 1] * w
-                        val y = outputFeature0[i] * h
-                        canvas.drawCircle(x, y, 10f, paint)
-                        keyPoints.add(floatArrayOf(x, y))
-                    } else {
-                        keyPoints.add(floatArrayOf(Float.NaN, Float.NaN))
-                    }
+                    val x = outputFeature0[i + 1] * w
+                    val y = outputFeature0[i] * h
+                    canvas.drawCircle(x, y, 10f, paint)
+                    keyPoints.add(floatArrayOf(x, y))
                 }
 
                 // Draw skeleton
@@ -123,7 +119,7 @@ class MainActivity : AppCompatActivity() {
                 val posture = checkPosture(keyPoints, canvas)
                 if (posture == "bad_sitting") {
                     badPostureCount++
-                    if (badPostureCount >= 20) {
+                    if (badPostureCount >= 100) {
                         if (!mediaPlayer.isPlaying) {
                             executorService.submit { mediaPlayer.start() }
                         }
@@ -244,30 +240,17 @@ class MainActivity : AppCompatActivity() {
         drawAngle(canvas, leftKnee, leftHip, leftKneeAngle, "L-Knee", drawnTextPositions)
         drawAngle(canvas, rightKnee, rightHip, rightKneeAngle, "R-Knee", drawnTextPositions)
 
-        // Check if it is a sitting posture
-        val sittingPosture = isSittingPosture(leftHip, rightHip, leftKnee, rightKnee)
-
-        if (!sittingPosture) {
-            Log.d("Not_Sitting", "Not sitting")
-            return "not_sitting"
-        }
-
-        Log.d("Neck", neckInclination.toString())
-        Log.d("Terso", torsoInclination.toString())
         // Determine if sitting posture is good or bad
-        return if (neckInclination in 85.0..95.0 && torsoInclination <= 100 && torsoInclination >= 80) "good_sitting" else "bad_sitting"
+        return if (neckInclination in 75.0..95.0 && torsoInclination <= 95 && torsoInclination >= 85) "good_sitting" else "bad_sitting"
     }
 
-    private fun isSittingPosture(leftHip: FloatArray, rightHip: FloatArray, leftKnee: FloatArray, rightKnee: FloatArray): Boolean {
-        val leftHipKneeAngle = calculateAngle(leftHip, leftKnee, floatArrayOf(leftKnee[0], leftKnee[1] + 1))
-        val rightHipKneeAngle = calculateAngle(rightHip, rightKnee, floatArrayOf(rightKnee[0], rightKnee[1] + 1))
-
-        return leftHipKneeAngle in 70.0..150.0 || rightHipKneeAngle in 70.0..150.0
-    }
 
     private fun calculateInclination(pointA: FloatArray, pointB: FloatArray): Float {
-        val angle = Math.toDegrees(atan2((pointB[1] - pointA[1]).toDouble(), (pointB[0] - pointA[0]).toDouble())).toFloat()
-        return if (angle < 0) angle + 360 else angle
+        var angle = Math.toDegrees(atan2((pointB[1] - pointA[1]).toDouble(), (pointB[0] - pointA[0]).toDouble())).toFloat()
+        if (angle < 0) {
+            angle += 360
+        }
+        return if (angle > 180) 360 - angle else angle
     }
 
     private fun calculateAngle(pointA: FloatArray, pointB: FloatArray, pointC: FloatArray): Float {
